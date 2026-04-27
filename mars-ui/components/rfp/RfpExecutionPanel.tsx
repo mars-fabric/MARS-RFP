@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React from 'react'
 import { ArrowLeft, ArrowRight, Play, Timer, DollarSign } from 'lucide-react'
 import { Button } from '@/components/core'
 import ExecutionProgress from '@/components/shared/ExecutionProgress'
@@ -28,24 +28,14 @@ export default function RfpExecutionPanel({
         executeStage,
     } = hook
 
-    const [elapsed, setElapsed] = useState(0)
-
     const stage = taskState?.stages.find(s => s.stage_number === stageNum)
     const isCompleted = stage?.status === 'completed'
     const isFailed = stage?.status === 'failed'
     const isNotStarted = stage?.status === 'pending'
 
-    // Timer
-    useEffect(() => {
-        if (!isExecuting) return
-        const interval = setInterval(() => setElapsed(prev => prev + 1), 1000)
-        return () => clearInterval(interval)
-    }, [isExecuting])
-
-    const formatTime = (seconds: number) => {
-        const m = Math.floor(seconds / 60)
-        const s = seconds % 60
-        return `${m}:${s.toString().padStart(2, '0')}`
+    const formatStartTime = (iso: string) => {
+        const d = new Date(iso)
+        return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'UTC' }) + ' UTC'
     }
 
     // Pre-execution
@@ -75,13 +65,13 @@ export default function RfpExecutionPanel({
         <div className="max-w-4xl mx-auto space-y-4">
             {/* Stats bar */}
             <div className="flex items-center gap-6">
-                {(isExecuting || elapsed > 0) && (
+                {stage?.started_at && (
                     <div
                         className="flex items-center gap-2 text-xs"
                         style={{ color: 'var(--mars-color-text-secondary)' }}
                     >
                         <Timer className="w-3.5 h-3.5" />
-                        {formatTime(elapsed)}
+                        Started {formatStartTime(stage.started_at)}
                     </div>
                 )}
                 {taskState?.total_cost_usd != null && taskState.total_cost_usd > 0 && (

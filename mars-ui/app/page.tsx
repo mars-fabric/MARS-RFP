@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { FileText, Play, CheckCircle2, AlertCircle, Search, X, ChevronLeft, ChevronRight, Loader2, Sparkles, Upload, Layers, ClipboardList } from 'lucide-react'
 import RfpProposalTask from '@/components/tasks/RfpProposalTask'
 import { getApiUrl } from '@/lib/config'
@@ -26,18 +26,11 @@ const STAGE_NAMES: Record<number, string> = {
 
 type FilterTab = 'all' | 'running' | 'completed' | 'failed'
 
-function timeAgo(dateStr: string | null): string {
+function formatDateTime(dateStr: string | null): string {
           if (!dateStr) return ''
-          const now = Date.now()
-          const then = new Date(dateStr).getTime()
-          const diffMs = now - then
-          const mins = Math.floor(diffMs / 60000)
-          if (mins < 1) return 'just now'
-          if (mins < 60) return `${mins}m ago`
-          const hours = Math.floor(mins / 60)
-          if (hours < 24) return `about ${hours} hour${hours > 1 ? 's' : ''} ago`
-          const days = Math.floor(hours / 24)
-          return `${days} day${days > 1 ? 's' : ''} ago`
+          const d = new Date(dateStr)
+          return d.toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }) +
+                    ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }) + ' UTC'
 }
 
 function getStatusColor(status: string): string {
@@ -132,8 +125,30 @@ function HomeContent() {
           const [showTask, setShowTask] = useState(false)
           const [recentTasks, setRecentTasks] = useState<RecentTask[]>([])
           const [panelOpen, setPanelOpen] = useState(true)
+          const [panelWidth, setPanelWidth] = useState(320)
           const [searchQuery, setSearchQuery] = useState('')
           const [activeFilter, setActiveFilter] = useState<FilterTab>('all')
+          const isResizing = useRef(false)
+
+          const handleMouseDown = useCallback(() => {
+                    isResizing.current = true
+                    document.body.style.cursor = 'col-resize'
+                    document.body.style.userSelect = 'none'
+                    const handleMouseMove = (e: MouseEvent) => {
+                              if (!isResizing.current) return
+                              const newWidth = window.innerWidth - e.clientX
+                              setPanelWidth(Math.max(200, Math.min(600, newWidth)))
+                    }
+                    const handleMouseUp = () => {
+                              isResizing.current = false
+                              document.body.style.cursor = ''
+                              document.body.style.userSelect = ''
+                              document.removeEventListener('mousemove', handleMouseMove)
+                              document.removeEventListener('mouseup', handleMouseUp)
+                    }
+                    document.addEventListener('mousemove', handleMouseMove)
+                    document.addEventListener('mouseup', handleMouseUp)
+          }, [])
 
           const fetchRecent = useCallback(() => {
                     fetch(getApiUrl('/api/rfp/recent'))
@@ -241,13 +256,22 @@ function HomeContent() {
 
                               {/* Right Sessions panel */}
                               <div
-                                        className="flex-shrink-0 border-l h-full flex flex-col transition-all duration-300 relative"
+                                        className="flex-shrink-0 border-l h-full flex flex-col relative"
                                         style={{
-                                                  width: panelOpen ? '320px' : '40px',
+                                                  width: panelOpen ? `${panelWidth}px` : '40px',
                                                   backgroundColor: 'var(--mars-color-surface-raised)',
                                                   borderColor: 'var(--mars-color-border)',
+                                                  transition: isResizing.current ? 'none' : 'width 0.3s',
                                         }}
                               >
+                                        {/* Drag handle on left edge */}
+                                        {panelOpen && (
+                                                  <div
+                                                            onMouseDown={handleMouseDown}
+                                                            className="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize z-20 hover:bg-[var(--mars-color-primary)]"
+                                                            style={{ opacity: 0.5 }}
+                                                  />
+                                        )}
                                         {/* Left-edge collapse/expand tab */}
                                         <button
                                                   onClick={() => setPanelOpen(prev => !prev)}
@@ -339,7 +363,7 @@ function HomeContent() {
                                                                                                                                   style={{ color: 'var(--mars-color-text-tertiary)' }}>
                                                                                                                                   {task.current_stage
                                                                                                                                             ? `Stage ${task.current_stage}: ${STAGE_NAMES[task.current_stage] || ''}`
-                                                                                                                                            : 'Setup'}
+                                                                                                                                            : task.status === 'completed' ? 'Proposal Completed' : 'Setup'}
                                                                                                                         </p>
                                                                                                                         {/* Progress bar */}
                                                                                                                         <div className="flex items-center gap-2 mt-2">
@@ -358,10 +382,10 @@ function HomeContent() {
                                                                                                                                             {Math.round(task.progress_percent)}%
                                                                                                                                   </span>
                                                                                                                         </div>
-                                                                                                                        {/* Time ago */}
+                                                                                                                        {/* Date & start time */}
                                                                                                                         <p className="text-[10px] mt-1.5"
                                                                                                                                   style={{ color: 'var(--mars-color-text-tertiary)' }}>
-                                                                                                                                  {timeAgo(task.created_at)}
+                                                                                                                                  {formatDateTime(task.created_at)}
                                                                                                                         </p>
                                                                                                               </div>
                                                                                                               {/* Delete button */}
