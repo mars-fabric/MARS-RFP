@@ -1,0 +1,31 @@
+# Environment
+.env
+.env.local
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Node.js / Next.js
+mars-ui/node_modules/
+mars-ui/.next/
+mars-ui/out/
+
+# OS
+.DS_Store
+
+# Work directories
+cmbdir/
+cmbdir_*
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
