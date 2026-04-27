@@ -29,8 +29,8 @@ type FilterTab = 'all' | 'running' | 'completed' | 'failed'
 function formatDateTime(dateStr: string | null): string {
           if (!dateStr) return ''
           const d = new Date(dateStr)
-          return d.toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }) +
-                    ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }) + ' UTC'
+          return d.toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' }) +
+                    ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
 function getStatusColor(status: string): string {

@@ -160,13 +160,21 @@ def build_shared_state(task_id: str, up_to_stage: int, db, session_id: str = "rf
     return shared
 
 
+def _utc_iso(dt) -> str:
+    """Format a datetime as ISO 8601 with Z suffix (UTC)."""
+    s = dt.isoformat()
+    if not s.endswith('Z') and '+' not in s:
+        s += 'Z'
+    return s
+
+
 def _stage_to_response(stage) -> RfpStageResponse:
     return RfpStageResponse(
         stage_number=stage.stage_number,
         stage_name=stage.stage_name,
         status=stage.status,
-        started_at=stage.started_at.isoformat() if stage.started_at else None,
-        completed_at=stage.completed_at.isoformat() if stage.completed_at else None,
+        started_at=_utc_iso(stage.started_at) if stage.started_at else None,
+        completed_at=_utc_iso(stage.completed_at) if stage.completed_at else None,
         error=stage.error_message,
     )
 
@@ -706,7 +714,7 @@ async def get_recent_rfp_tasks():
                 task_id=run.id,
                 task=run.task_description or "",
                 status=run.status,
-                created_at=run.started_at.isoformat() if run.started_at else None,
+                created_at=_utc_iso(run.started_at) if run.started_at else None,
                 current_stage=current,
                 progress_percent=pct,
             ))
@@ -753,7 +761,7 @@ async def get_rfp_task_state(task_id: str):
             task=run.task_description or "",
             status=run.status,
             work_dir=run.meta.get("work_dir") if run.meta else None,
-            created_at=run.started_at.isoformat() if run.started_at else None,
+            created_at=_utc_iso(run.started_at) if run.started_at else None,
             stages=[_stage_to_response(s) for s in stages],
             current_stage=current,
             progress_percent=pct,

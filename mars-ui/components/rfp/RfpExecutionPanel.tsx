@@ -35,7 +35,7 @@ export default function RfpExecutionPanel({
 
     const formatStartTime = (iso: string) => {
         const d = new Date(iso)
-        return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'UTC' }) + ' UTC'
+        return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
     }
 
     // Pre-execution
